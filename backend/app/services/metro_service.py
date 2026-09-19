@@ -35,13 +35,16 @@ class MetroService:
     def settings(self):
         return settings_repo.get_map(self._conn)
 
-    def quote(self, start: str, end: str, persist: bool):
+    def quote(self, start: str, end: str, persist: bool, via: str | None = None):
         edges = edges_repo.list_pairs(self._conn)
         rules = rules_repo.as_calc_rules(self._conn)
-        result = quote_route(edges, start, end, rules)
+        result = quote_route(edges, start, end, rules, via=via)
         run_id = None
         if persist and result.get("reachable"):
-            run_id = runs_repo.insert(self._conn, "quote", {"start": start, "end": end}, result)
+            payload = {"start": start, "end": end}
+            if via is not None:
+                payload["via"] = via
+            run_id = runs_repo.insert(self._conn, "quote", payload, result)
         return {"run_id": run_id, **result}
 
     def history(self, limit=50):
